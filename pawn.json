@@ -1,0 +1,8 @@
+{
+  "user": "leninalejandrogongora-ai",
+  "repo": "Samp-comp",
+  "entry": "gamemodes/grandlarc.pwn",
+  "output": "gamemodes/grandlarc.amx",
+  "dependencies": ["pawn-lang/samp-stdlib"],
+  "local": true
+}
