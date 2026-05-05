@@ -1,0 +1,65 @@
+name: Compilar Gamemode SA-MP
+
+on:
+  push:
+    paths:
+      - 'gamemodes/**.pwn'
+      - 'filterscripts/**.pwn'
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar compilador pawncc
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -q
+          sudo apt-get install -y wget lib32gcc-s1
+          wget -q https://github.com/pawn-lang/compiler/releases/download/v3.10.11/pawnc-3.10.11-linux.tar.gz
+          tar -xzf pawnc-3.10.11-linux.tar.gz
+          sudo install -m755 pawnc-3.10.11-linux/bin/pawncc /usr/local/bin/pawncc
+          sudo cp pawnc-3.10.11-linux/lib/libpawnc.so /usr/local/lib/
+          sudo ldconfig
+          pawncc --version
+
+      - name: Compilar gamemodes
+        run: |
+          mkdir -p output/gamemodes
+          for pwn in gamemodes/*.pwn; do
+            [ -f "$pwn" ] || continue
+            echo "Compilando $pwn..."
+            pawncc "$pwn" -i include -i gamemodes -o"output/${pwn%.pwn}.amx"
+            if [ $? -eq 0 ]; then
+              echo "OK: $pwn compilado"
+            else
+              echo "FALLO: $pwn"
+              exit 1
+            fi
+          done
+
+      - name: Compilar filterscripts
+        run: |
+          mkdir -p output/filterscripts
+          for pwn in filterscripts/*.pwn; do
+            [ -f "$pwn" ] || continue
+            echo "Compilando $pwn..."
+            pawncc "$pwn" -i include -i filterscripts -o"output/${pwn%.pwn}.amx"
+            if [ $? -eq 0 ]; then
+              echo "OK: $pwn compilado"
+            else
+              echo "FALLO: $pwn"
+              exit 1
+            fi
+          done
+
+      - name: Subir archivos compilados
+        uses: actions/upload-artifact@v4
+        with:
+          name: archivos-compilados
+          path: output/
+          retention-days: 7
+          
