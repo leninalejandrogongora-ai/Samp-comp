@@ -1,0 +1,53 @@
+name: Compilar Gamemode SA-MP
+
+on:
+  push:
+    paths:
+      - 'gamemodes/**.pwn'
+      - 'filterscripts/**.pwn'
+      - '.github/workflows/compilar.yml'
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar sampctl
+        run: |
+          curl -sS https://get.sampctl.com | bash
+          echo "$HOME/.sampctl/bin" >> $GITHUB_PATH
+
+      - name: Descargar dependencias
+        run: sampctl package ensure
+
+      - name: Compilar gamemodes
+        run: |
+          mkdir -p output/gamemodes
+          for pwn in gamemodes/*.pwn; do
+            [ -f "$pwn" ] || continue
+            name=$(basename "$pwn" .pwn)
+            echo "Compilando $pwn..."
+            sampctl package build --entry "$pwn" --output "output/gamemodes/$name.amx"
+            echo "OK: $name.amx"
+          done
+
+      - name: Compilar filterscripts
+        run: |
+          mkdir -p output/filterscripts
+          for pwn in filterscripts/*.pwn; do
+            [ -f "$pwn" ] || continue
+            name=$(basename "$pwn" .pwn)
+            echo "Compilando $pwn..."
+            sampctl package build --entry "$pwn" --output "output/filterscripts/$name.amx"
+            echo "OK: $name.amx"
+          done
+
+      - name: Subir archivos compilados
+        uses: actions/upload-artifact@v4
+        with:
+          name: archivos-compilados
+          path: output/
+          retention-days: 7
